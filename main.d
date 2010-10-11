@@ -25,12 +25,15 @@ import std.string;
 import std.regex;
 
 import vlad.bot;
+import vlad.config;
+import vlad.commands;
 
 Bot bot;
 string prepend = "!";
 
 void main(string[] args) {
-    bot = new Bot("irc.freenode.net", 6667);
+    read_config("vlad.config");
+    bot = new Bot("irc.freenode.net", 6667, config_get("botname"));
     bot.connect();
     bot.join("#tempchan");
     core.thread.Thread.sleep(50_000_000);
@@ -43,24 +46,25 @@ void main(string[] args) {
      string line;
      auto r = regex(r"^:(.+)!(.+)@(\S+) (\S+) (\S+) :(.+)$");
      
-     string nick, user, host, type, chan, text;
+     string[string] hash;
      while(bot.alive()) {
          line = bot.recv();
          if(line.length > 0) {
              auto match = match(line, r);
              if(!match.empty) {
-                 nick = match.captures[1];
-                 user = match.captures[2];
-                 host = match.captures[3];
-                 type = match.captures[4];
-                 chan = match.captures[5];
-                 text = match.captures[6];
+                 hash["nick"] = match.captures[1];
+                 hash["user"] = match.captures[2];
+                 hash["host"] = match.captures[3];
+                 hash["type"] = match.captures[4];
+                 hash["chan"] = match.captures[5];
+                 hash["text"] = match.captures[6];
                  // temporary
-                 if(text[0..1] == prepend) {
-                     bot.privmsg(chan, "You said: " ~ text);
-                     writeln(text[0..4]);
-                     if(text[0..5] == prepend ~ "join")
-                        bot.join(text[5..$]);
+                 if(hash["text"][0..1] == prepend) {
+                     bot.privmsg(hash["chan"], hash["nick"] ~ 
+                        " said: " ~ hash["text"]);
+                     writeln(hash["text"][0..4]);
+                     if(hash["text"][0..5] == prepend ~ "join")
+                        bot.join(hash["text"][5..$]);
                  }
              }
          }
