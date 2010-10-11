@@ -31,6 +31,19 @@ JSONObject read_config(string filename) {
     return config;
 }
 
+///Fetches a string from the config file
 string config_get(string key){
     return (cast(JSONString)config[key]).get();
+}
+
+string config_get(JSONType hash, string key){
+    return (cast(JSONString)hash[key]).get();
+}
+
+ushort config_get_numeric(string key) {
+    return (cast(ushort)(cast(JSONNumber)config[key]).get());
+}
+
+ushort config_get_numeric(JSONType hash, string key) {
+    return (cast(ushort)(cast(JSONNumber)hash[key]).get());
 }

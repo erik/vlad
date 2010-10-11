@@ -42,7 +42,11 @@ class IRC {
             sock.send(message ~ "\r\n");
         }
     
-    void privmsg(string chan, string message) {
+    void privmsg(string chan, string message) 
+    in {
+        assert(alive());
+    }
+    body {
         send("PRIVMSG " ~ " " ~ chan ~ " " ~ message);  
     }
     
@@ -60,6 +64,11 @@ class IRC {
     
     bool alive(){
         return sock.isAlive();
+    }
+    
+    void quit() {
+        send("QUIT bye!");
+        sock.close();
     }
     
     ///infinite loop, recieves data from socket, stores it in buffer

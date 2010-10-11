@@ -28,7 +28,7 @@ class Bot {
         this.server = server;
         this.nick = nick;
         this.port = port;        
-        this.user = nick ~ " 0 * :" ~ realname;        
+        this.user = nick ~ " * * :" ~ realname;        
     }
     
     void connect() {
@@ -36,13 +36,16 @@ class Bot {
         irc.recv_loop();
         irc.user(user);
         irc.nick(nick);
+        alive = true;
         
         void ping_loop() {
-            foreach(string chan; chans) {
-                irc.send("PING " ~ chan);
+            if(isAlive) {
+                core.thread.Thread.sleep(1200_000_000);
+                foreach(string chan; chans) {
+                    irc.send("PING " ~ chan);
+                }
+                ping_loop();
             }
-            core.thread.Thread.sleep(1200_000_000);
-            ping_loop();
         }
         
         (new core.thread.Thread(&ping_loop)).start();
@@ -57,8 +60,8 @@ class Bot {
         irc.privmsg(chan, ":" ~ message);
     }
     
-    bool alive(){
-        return irc.alive();
+    bool isAlive(){
+        return alive && irc.alive();
     }
     
     string recv(){
@@ -69,6 +72,15 @@ class Bot {
         irc.clear_buf;
     }
     
+    string name(){
+        return nick;
+    }
+    
+    void quit() {
+        alive = false;
+        irc.quit;
+    }
+    
     private:
     string server;
     string nick;
@@ -76,5 +88,6 @@ class Bot {
     string[] chans;
     IRC irc;
     ushort port;
+    bool alive;
 }
 

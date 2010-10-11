@@ -28,45 +28,32 @@ import vlad.bot;
 import vlad.config;
 import vlad.commands;
 
-Bot bot;
-string prepend = "!";
-
 void main(string[] args) {
     read_config("vlad.config");
-    bot = new Bot("irc.freenode.net", 6667, config_get("botname"));
+    string server = config_get("server");
+    
+    Bot bot = new Bot(server, config_get_numeric("port"), 
+            config_get("botname"));
     bot.connect();
-    bot.join("#tempchan");
+    foreach(chan; config["chans"]){
+          bot.join(chan.toJSONString.get);
+    }
+
     core.thread.Thread.sleep(50_000_000);
-    bot_loop();
+    bot_loop(bot);
 }
  
- //TODO: split this into usable sections!
- void bot_loop() {
+ void bot_loop(Bot bot) {
      bot.clear_buffer(); // clear out some connection leftovers     
+
      string line;
-     auto r = regex(r"^:(.+)!(.+)@(\S+) (\S+) (\S+) :(.+)$");
      
-     string[string] hash;
-     while(bot.alive()) {
+     while(bot.isAlive()) {
          line = bot.recv();
-         if(line.length > 0) {
-             auto match = match(line, r);
-             if(!match.empty) {
-                 hash["nick"] = match.captures[1];
-                 hash["user"] = match.captures[2];
-                 hash["host"] = match.captures[3];
-                 hash["type"] = match.captures[4];
-                 hash["chan"] = match.captures[5];
-                 hash["text"] = match.captures[6];
-                 // temporary
-                 if(hash["text"][0..1] == prepend) {
-                     bot.privmsg(hash["chan"], hash["nick"] ~ 
-                        " said: " ~ hash["text"]);
-                     writeln(hash["text"][0..4]);
-                     if(hash["text"][0..5] == prepend ~ "join")
-                        bot.join(hash["text"][5..$]);
-                 }
-             }
+         if(line.length) {
+            handle_line(line, bot);
+         } else {
+             core.thread.Thread.sleep(2_500_000);
          }
      }
  }
