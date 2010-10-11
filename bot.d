@@ -53,6 +53,22 @@ class Bot {
         irc.join(chan);
     }
     
+    void privmsg(string chan, string message) {
+        irc.privmsg(chan, ":" ~ message);
+    }
+    
+    bool alive(){
+        return irc.alive();
+    }
+    
+    string recv(){
+        return irc.recv();
+    }
+    
+    void clear_buffer(){
+        irc.clear_buf;
+    }
+    
     private:
     string server;
     string nick;

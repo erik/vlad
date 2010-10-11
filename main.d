@@ -21,11 +21,48 @@ module vlad.main;
 
 import std.stdio;
 import std.socket;
+import std.string;
+import std.regex;
+
 import vlad.bot;
 
+Bot bot;
+string prepend = "!";
+
 void main(string[] args) {
-    Bot bot = new Bot("irc.freenode.net", 6667);
-    bot.connect();   
-    bot.join("#tempchan");     
+    bot = new Bot("irc.freenode.net", 6667);
+    bot.connect();
+    bot.join("#tempchan");
+    core.thread.Thread.sleep(50_000_000);
+    bot_loop();
 }
  
+ //TODO: split this into usable sections!
+ void bot_loop() {
+     bot.clear_buffer(); // clear out some connection leftovers     
+     string line;
+     auto r = regex(r"^:(.+)!(.+)@(\S+) (\S+) (\S+) :(.+)$");
+     
+     string nick, user, host, type, chan, text;
+     while(bot.alive()) {
+         line = bot.recv();
+         if(line.length > 0) {
+             auto match = match(line, r);
+             if(!match.empty) {
+                 nick = match.captures[1];
+                 user = match.captures[2];
+                 host = match.captures[3];
+                 type = match.captures[4];
+                 chan = match.captures[5];
+                 text = match.captures[6];
+                 // temporary
+                 if(text[0..1] == prepend) {
+                     bot.privmsg(chan, "You said: " ~ text);
+                     writeln(text[0..4]);
+                     if(text[0..5] == prepend ~ "join")
+                        bot.join(text[5..$]);
+                 }
+             }
+         }
+     }
+ }

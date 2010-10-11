@@ -22,6 +22,7 @@ module vlad.irc;
 import std.stdio;
 import std.socket;
 import core.thread;
+import std.array;
 
 class IRC {
 
@@ -57,6 +58,10 @@ class IRC {
         send("JOIN " ~ chan);
     }
     
+    bool alive(){
+        return sock.isAlive();
+    }
+    
     ///infinite loop, recieves data from socket, stores it in buffer
     void recv_loop() {
         Thread t = new Thread(&recv_loop_);
@@ -64,12 +69,12 @@ class IRC {
     }
     
     string recv() {
-        if(recv_buf.length == 0) {
+        if(recv_buf.empty) {
             return "";
         }
         
-        string line = recv_buf[recv_buf.length - 1];
-        recv_buf.length = 0;
+        string line = recv_buf[0];
+        popBack(recv_buf);
         
         return line;
     }
@@ -86,9 +91,12 @@ class IRC {
             if(ret == std.string.repeat("\0", 256)) {
                 break;
             }
-            write("<<" ~ std.string.chop(cast(string)ret));
-            recv_buf ~= std.string.splitlines(cast(string)ret);
+            string str = cast(string) ret;
+            str = std.string.replace(str, "\r\n", "\0");
+            writeln("<<" ~ str);
+            recv_buf ~= str;
             ret = std.string.repeat("\0", 256);
+            Thread.sleep(500_000);
         }
         
     }
