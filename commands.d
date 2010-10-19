@@ -25,6 +25,11 @@ import std.string;
 import vlad.config;
 import vlad.bot;
 
+alias string[string] IRCLine;
+alias void function(IRCLine) IRCcmd;
+
+
+private Bot ircBot;
 
 void handle_line(string input, Bot bot) {
     auto r = regex(r"^:(.+)!(.+)@(\S+) (\S+) (\S+) :(.+)$");
@@ -35,13 +40,14 @@ void handle_line(string input, Bot bot) {
        return;
     }
     
-    string[string] line;
+    IRCLine line;
     line["nick"] = match.captures[1];
     line["user"] = match.captures[2];
     line["host"] = match.captures[3];
     line["type"] = match.captures[4];
     line["chan"] = match.captures[5];
     line["text"] = match.captures[6].replace("\r\n", "\0");
+    
     //FIXME: Doesn't respond to highlights unless there is no leading ws
     if(line["text"][0..1] == prepend || line["text"][0..bot.name.length+1] == (bot.name ~ ":")) {
         int offset = line["text"][0..1] == prepend ? 1 : bot.name.length+1;
@@ -55,17 +61,36 @@ void handle_line(string input, Bot bot) {
     handle_command(line, bot);
 }
 
-void handle_command(string[string] line, Bot bot) {
-    switch(line["command"]) {
+void handle_command(IRCLine line, Bot bot) {
+    auto cmd = get_command(line["command"]);
+    
+    ircBot = bot;
+    cmd(line);
+    ircBot = null;
+}
+ 
+IRCcmd get_command(string name) {
+    switch(name) {
         case "say" : 
-            bot.privmsg(line["chan"], line["args"]);
-            break;
-        //FIXME: only responds when there is a trailing space
+            return &cmdSay;
         case "quit" :
-            bot.privmsg(line["chan"], "Quitting, bye!");
-            bot.quit();
-            break;
+            return &cmdQuit;
         default:
-            bot.privmsg(line["chan"], "Don't know command: " ~ line["command"]);
+            return &cmdDunno;
     }
+}
+
+void cmdSay(IRCLine line) {
+    ircBot.privmsg(line["chan"], line["args"]);
+}
+
+//FIXME: only responds when there is a trailing space
+void cmdQuit(IRCLine line) {
+    ircBot.privmsg(line["chan"], "Quitting, bye!");
+    ircBot.quit();
+}
+
+void cmdDunno(IRCLine line) {
+    ircBot.privmsg(line["chan"], "Don't know command: " ~ 
+        line["command"]);
 }
