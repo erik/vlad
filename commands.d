@@ -20,8 +20,10 @@
 module vlad.commands;
 
 import std.stdio;
+import std.socket, std.socketstream, std.stream;
 import std.regex;
 import std.string;
+
 import vlad.config;
 import vlad.bot;
 
@@ -75,6 +77,8 @@ IRCcmd get_command(string name) {
             return &cmdSay;
         case "quit" :
             return &cmdQuit;
+        case "down" :
+            return &cmdDown;
         default:
             return &cmdDunno;
     }
@@ -93,4 +97,54 @@ void cmdQuit(IRCLine line) {
 void cmdDunno(IRCLine line) {
     ircBot.privmsg(line["chan"], "Don't know command: " ~ 
         line["command"]);
+}
+
+void cmdDown(IRCLine line) {
+    string baseURL = "downforeveryoneorjustme.com";
+    string site = line["args"].split[0];
+    string url = "/" ~ site;
+    TcpSocket sock;
+    Stream ss;
+    
+    try {
+        sock = new TcpSocket(new InternetAddress(baseURL, 80));
+        ss = new SocketStream(sock);
+        ss.writeString("GET " ~ url ~ " HTTP/1.1\r\n"
+            "Host: " ~ baseURL ~ "\r\n"
+            "\r\n");
+    } catch (Exception e) {
+        writefln("Exception: ", e);
+        ircBot.privmsg(line["chan"], "Sorry, the Internet is broken.");
+        return;
+    }
+    
+    char[] buf;
+    
+    uint down = -1;
+    
+    while(!ss.eof) {
+        buf = ss.readLine();
+
+        auto matches = match(cast(string)buf,
+            regex(r"<title>([^<]+)</title>")) ;
+            
+        if(!matches.empty) {
+            auto s = matches.captures[1];
+            if(s == "It's just you.") {
+                down = 0;
+                break;
+            } else if (s == "It's not just you!") {
+                down = 1;
+                break;
+            }
+        }
+    }
+        
+    if(down == 1) {
+        ircBot.privmsg(line["chan"], "It's not just you");
+    } else if(!down){
+        ircBot.privmsg(line["chan"], "It's just you.");
+    } else {
+        ircBot.privmsg(line["chan"], "Uh oh, error!");
+    }
 }
