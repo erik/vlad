@@ -23,6 +23,7 @@ import std.stdio;
 import std.socket, std.socketstream, std.stream;
 import std.regex;
 import std.string;
+import std.socket;
 
 import vlad.config;
 import vlad.bot;
@@ -32,6 +33,22 @@ alias void function(IRCLine) IRCcmd;
 
 
 private Bot ircBot;
+
+bool isAdmin(string nick) {
+    foreach(admin; admins)
+        if(nick == admin.toJSONString.get) return true;
+    return false;
+}
+
+
+/// returns true if user is admin, false if not
+bool shouldBeAdmin(IRCLine map) {
+    if(!isAdmin(map["nick"])) {
+        ircBot.privmsg(map["chan"], map["nick"] ~ ": you aren't an admin.");
+        return false;
+    }
+    return true;
+}
 
 void handle_line(string input, Bot bot) {
     auto r = regex(r"^:(.+)!(.+)@(\S+) (\S+) (\S+) :(.+)$");
@@ -68,7 +85,7 @@ void handle_command(IRCLine line, Bot bot) {
     
     ircBot = bot;
     cmd(line);
-    ircBot = null;
+    bot = ircBot;
 }
  
 IRCcmd get_command(string name) {
@@ -79,9 +96,45 @@ IRCcmd get_command(string name) {
             return &cmdQuit;
         case "down" :
             return &cmdDown;
+        case "join":
+            return &cmdJoin;
+        case "part":
+            return &cmdPart;
+        case "whereareyou":
+            return &cmdChans;
+        case "sh":
+            return &cmdSh;
+        case "reload":
+            return &cmdReload;
         default:
             return &cmdDunno;
     }
+}
+
+void cmdSh(IRCLine line) {
+    if(!shouldBeAdmin(line))
+        return;
+    string command = line["args"];
+    ircBot.privmsg(line["chan"], "Running command...");
+    
+    Bot tmp = ircBot;
+    
+    void run_sh_async(IRCLine l, Bot b) {
+        string output;
+        try {
+            output = std.process.shell(command);
+        } catch(Exception e) {
+            output = "Exception: " ~ e.toString();
+        } finally {
+            b.privmsg(l["chan"], output.replace("\n", "  "));
+        }
+    }
+    
+    void helper() {
+        run_sh_async(line, tmp);
+    }
+
+    (new core.thread.Thread(&helper)).start();
 }
 
 void cmdSay(IRCLine line) {
@@ -92,6 +145,43 @@ void cmdSay(IRCLine line) {
 void cmdQuit(IRCLine line) {
     ircBot.privmsg(line["chan"], "Quitting, bye!");
     ircBot.quit();
+}
+
+void cmdReload(IRCLine line) {
+    if(!shouldBeAdmin(line))
+        return;
+        
+    read_config("vlad.config");
+    
+    foreach(chan; config["chans"]){
+          ircBot.join(chan.toJSONString.get);
+    }
+    
+    ircBot.privmsg(line["chan"], "Reloaded.");
+}
+
+void cmdJoin(IRCLine line) {
+    if(!shouldBeAdmin(line))
+        return ;
+    
+    string chan = line["args"];
+    ircBot.join(chan);
+}
+
+void cmdPart(IRCLine line) {
+    if(!shouldBeAdmin(line))
+        return ;
+    
+    string chan = line["args"];
+    ircBot.part(chan);
+}
+
+void cmdChans(IRCLine line) {
+    string channels = "";
+    foreach(chan; ircBot.channels){
+        channels ~= chan ~ " ";
+    }
+    ircBot.privmsg(line["chan"], "I am in: " ~ channels);
 }
 
 void cmdDunno(IRCLine line) {
@@ -141,10 +231,10 @@ void cmdDown(IRCLine line) {
     }
         
     if(down == 1) {
-        ircBot.privmsg(line["chan"], "It's not just you");
+        ircBot.privmsg(line["chan"], "It's not just you!");
     } else if(!down){
         ircBot.privmsg(line["chan"], "It's just you.");
     } else {
-        ircBot.privmsg(line["chan"], "Uh oh, error!");
+        ircBot.privmsg(line["chan"], "Uh oh, an error!");
     }
 }

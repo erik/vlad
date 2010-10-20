@@ -24,10 +24,12 @@ import std.file;
 import libdjson.json;
 
 JSONObject config;
+JSONType admins;
 
 JSONObject read_config(string filename) {
     auto file_contents = readText(filename);
     config = readJSON(file_contents);
+    admins = config["admins"];
     return config;
 }
 

@@ -52,8 +52,21 @@ class Bot {
     }        
     
     void join(string chan) {
-        chans ~= chan;
-        irc.join(chan);
+        if(!inChan(chan)) {
+            chans ~= chan;
+            irc.join(chan);
+        }
+    }
+    
+    void part(string chan, string reason="\"Leaving\"") {
+        if(inChan(chan)) {
+            string[] newChans;
+            foreach(c; chans) {
+                if(c != chan)
+                    newChans ~= c;
+            }
+        }
+        irc.part(chan, reason);
     }
     
     void privmsg(string chan, string message) {
@@ -62,6 +75,18 @@ class Bot {
     
     bool isAlive(){
         return alive && irc.alive();
+    }
+    
+    bool inChan(string chan) {
+        foreach(c; chans) {
+            if(c == chan)
+                return true;
+        }
+        return false;
+    }
+    
+    string[] channels(){
+        return chans;
     }
     
     string recv(){

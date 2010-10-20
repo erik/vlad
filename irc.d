@@ -62,6 +62,10 @@ class IRC {
         send("JOIN " ~ chan);
     }
     
+    void part(string chan, string reason) {
+        send("PART " ~ chan ~ ":" ~ reason);
+    }
+    
     bool alive(){
         return sock.isAlive();
     }
