@@ -3,7 +3,7 @@
 DMD=dmd
 DMDFLAGS=-w -debug -gc -unittest
 INCS=-Ivendor
-SRC=$(wildcard *.d)
+SRC=$(wildcard src/*.d)
 EXE=vlad
 
 ####################################
@@ -15,4 +15,4 @@ json.o:
 	@cd vendor/libdjson && $(DMD) -c json.d
 
 clean:
-	rm $(EXE) vendor/libdjson/json.o
+	rm $(EXE) vlad.o vendor/libdjson/json.o
