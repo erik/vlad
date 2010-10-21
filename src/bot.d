@@ -74,8 +74,35 @@ class Bot {
         irc.part(chan, reason);
     }
     
+    bool muted(string chan) {
+        foreach(c; mutes) {
+            if(c == chan)
+                return true;
+        }
+        return false;
+    }
+    
+    void mute(string chan) {
+        if(!muted(chan)){
+            mutes ~= chan;
+        }
+    }
+    
+    void unmute(string chan) {
+        if(muted(chan)) {
+            string[] newMutes;
+            foreach(c; mutes) {
+                if(c != chan) {
+                    newMutes ~= c;
+                }
+            }
+            mutes = newMutes;
+        }
+    }
+    
     void privmsg(string chan, string message) {
-        irc.privmsg(chan, ":" ~ message);
+        if(!muted(chan))
+            irc.privmsg(chan, ":" ~ message);
     }
     
     bool isAlive(){
@@ -116,6 +143,7 @@ class Bot {
     string nick;
     string user;
     string[] chans;
+    string[] mutes;
     IRC irc;
     ushort port;
     bool alive;

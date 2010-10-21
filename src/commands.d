@@ -107,10 +107,29 @@ IRCcmd get_command(string name) {
             return &cmdSh;
         case "reload":
             return &cmdReload;
+        case "mute":
+            return &cmdMute;
+        case "unmute":
+            return &cmdUnmute;
         default:
             return &cmdDunno;
     }
 }
+
+void cmdMute(IRCLine line) {
+    if(!shouldBeAdmin(line))
+        return;
+    ircBot.privmsg(line["chan"], "Muted.");
+    ircBot.mute(line["chan"]);
+}
+
+void cmdUnmute(IRCLine line) {
+    if(!shouldBeAdmin(line))
+        return;
+    ircBot.unmute(line["chan"]);
+    ircBot.privmsg(line["chan"], "Unmuted.");
+}
+    
 
 void cmdSh(IRCLine line) {
     if(!shouldBeAdmin(line))
