@@ -64,7 +64,8 @@ void handle_line(string input, Bot bot) {
     line["user"] = match.captures[2];
     line["host"] = match.captures[3];
     line["type"] = match.captures[4];
-    line["chan"] = match.captures[5];
+    line["chan"] = match.captures[5] == bot.name ? line["nick"] : 
+        match.captures[5];
     line["text"] = match.captures[6].replace("\r\n", "\0");
     
     //FIXME: Doesn't respond to highlights unless there is no leading ws
@@ -145,10 +146,10 @@ void cmdSay(IRCLine line) {
     ircBot.privmsg(line["chan"], line["args"]);
 }
 
-//FIXME: only responds when there is a trailing space
 void cmdQuit(IRCLine line) {
     ircBot.privmsg(line["chan"], "Quitting, bye!");
     ircBot.quit();
+    //TODO: properly quit app
 }
 
 void cmdReload(IRCLine line) {
