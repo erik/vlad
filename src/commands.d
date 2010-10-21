@@ -93,6 +93,8 @@ IRCcmd get_command(string name) {
     switch(name) {
         case "say" : 
             return &cmdSay;
+        case "action":
+            return &cmdAction;
         case "quit" :
             return &cmdQuit;
         case "down" :
@@ -114,6 +116,10 @@ IRCcmd get_command(string name) {
         default:
             return &cmdDunno;
     }
+}
+
+void cmdAction(IRCLine line) {
+    ircBot.action(line["chan"], line["args"]);
 }
 
 void cmdMute(IRCLine line) {

@@ -105,6 +105,12 @@ class Bot {
             irc.privmsg(chan, ":" ~ message);
     }
     
+    void action(string chan, string message) {
+        if(!muted(chan)) {
+            this.privmsg(chan, "\1ACTION " ~ message ~ "\1");
+        }
+    }
+    
     bool isAlive(){
         return alive && irc.alive();
     }
