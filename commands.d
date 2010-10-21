@@ -124,9 +124,13 @@ void cmdSh(IRCLine line) {
         try {
             output = std.process.shell(command);
         } catch(Exception e) {
-            output = "Exception: " ~ e.toString();
+            output ~= "  Exception: " ~ e.toString();
         } finally {
-            b.privmsg(l["chan"], output.replace("\n", "  "));
+            output = output.length == 0 ? 
+                "Command completed successfully." : output;
+            output = output.replace("\n", "  ");
+            output = output.replace("\r", "  ");
+            b.privmsg(l["chan"], output);
         }
     }
     

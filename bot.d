@@ -20,6 +20,7 @@
 module vlad.bot;
 
 import std.stdio;
+import std.string;
 import vlad.irc;
 
 class Bot {
@@ -59,12 +60,16 @@ class Bot {
     }
     
     void part(string chan, string reason="\"Leaving\"") {
+        chan = chomp(chan);
+        
         if(inChan(chan)) {
             string[] newChans;
             foreach(c; chans) {
-                if(c != chan)
+                if(c.icmp(chan)) {
                     newChans ~= c;
+                }
             }
+            this.chans = newChans;
         }
         irc.part(chan, reason);
     }
@@ -78,8 +83,8 @@ class Bot {
     }
     
     bool inChan(string chan) {
-        foreach(c; chans) {
-            if(c == chan)
+        foreach(c; this.chans) {
+            if(!c.icmp(chan))
                 return true;
         }
         return false;

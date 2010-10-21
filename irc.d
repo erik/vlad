@@ -21,6 +21,7 @@ module vlad.irc;
 
 import std.stdio;
 import std.socket;
+import std.string;
 import core.thread;
 import std.array;
 
@@ -63,7 +64,7 @@ class IRC {
     }
     
     void part(string chan, string reason) {
-        send("PART " ~ chan ~ ":" ~ reason);
+        send("PART " ~ chan ~ " :" ~ reason);
     }
     
     bool alive(){
@@ -98,17 +99,28 @@ class IRC {
     
     private:
     void recv_loop_(){
-        char[256] ret = std.string.repeat("\0", 256);
+        char[256] ret = repeat("\0", 256);
         while(sock.isAlive()) {
             sock.receive(ret);
-            if(ret == std.string.repeat("\0", 256)) {
+            if(ret == "") {
                 break;
             }
             string str = cast(string) ret;
-            str = std.string.replace(str, "\r\n", "\0");
-            writeln("<<" ~ str);
-            recv_buf ~= str;
-            ret = std.string.repeat("\0", 256);
+            str = replace(str, "\r", "\0");
+            str = replace(str, "\n", "\0");
+            
+            string nstr = "";
+            foreach(int c; str) {
+                if(c != 0) {
+                    nstr ~= cast(char)c;
+                } else {
+                    break;
+                }
+            }
+            
+            writeln("<<" ~ nstr);
+            recv_buf ~= nstr;
+            ret = repeat("\0", 256);
             Thread.sleep(500_000);
         }
         
