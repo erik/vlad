@@ -27,6 +27,7 @@ import std.socket;
 
 import vlad.config;
 import vlad.bot;
+import vlad.lua;
 
 alias string[string] IRCLine;
 alias void function(IRCLine) IRCcmd;
@@ -68,11 +69,10 @@ void handle_line(string input, Bot bot) {
         match.captures[5];
     line["text"] = match.captures[6].replace("\r\n", "\0");
     
-    //FIXME: Doesn't respond to highlights unless there is no leading ws
-    if(line["text"][0..1] == prepend || line["text"][0..bot.name.length+1] == (bot.name ~ ":")) {
-        int offset = line["text"][0..1] == prepend ? 1 : bot.name.length+1;
+    //FIXME: Doesn't respond to highlights
+    if(line["text"][0..1] == prepend) {
         line["command"] = stripl(line["text"].indexOf(' ') == -1 ? 
-            line["text"][offset..$] : line["text"].split[0][offset..$]);
+            line["text"][1..$] : line["text"].split[0][1..$]);
         line["args"] = line["text"].split[1..$].join(" ");
     } else {
         return;
@@ -114,7 +114,7 @@ IRCcmd get_command(string name) {
         case "unmute":
             return &cmdUnmute;
         default:
-            return &cmdDunno;
+            return &cmdCallLua;
     }
 }
 
@@ -183,6 +183,8 @@ void cmdReload(IRCLine line) {
         
     read_config("vlad.config");
     
+    loadPlugins();
+    
     foreach(chan; config["chans"]){
           ircBot.join(chan.toJSONString.get);
     }
@@ -214,9 +216,8 @@ void cmdChans(IRCLine line) {
     ircBot.privmsg(line["chan"], "I am in: " ~ channels);
 }
 
-void cmdDunno(IRCLine line) {
-    ircBot.privmsg(line["chan"], "Don't know command: " ~ 
-        line["command"]);
+void cmdCallLua(IRCLine line) {
+    callPlugin(line["command"], ircBot, line);
 }
 
 void cmdDown(IRCLine line) {

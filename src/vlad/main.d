@@ -27,9 +27,15 @@ import std.regex;
 import vlad.bot;
 import vlad.config;
 import vlad.commands;
+import vlad.lua;
+
+//TODO: clean up main
 
 void main(string[] args) {
     read_config("vlad.config");
+    
+    loadPlugins();
+    
     string server = config_get("server");
     
     Bot bot = new Bot(server, config_get_numeric("port"), 

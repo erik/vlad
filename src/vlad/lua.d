@@ -20,4 +20,91 @@
 module vlad.lua;
 
 import std.stdio;
+import std.file;
 
+import vlad.bot;
+import vlad.irc;
+import vlad.config;
+import vlad.commands;
+
+import luad.all;
+
+LuaState[string] luaPlugins;
+alias string[string] IRCLine;
+
+///Load all the plugins from specified directory
+void loadPlugins(string dir="plugins") {
+    foreach(string file; listdir(dir)) {
+        auto lua = new LuaState;
+        string name = file;
+        LuaFunction plugin;
+        
+        lua.openLibs();
+        try {
+            lua.doFile(dir ~ "/" ~ file);
+        } catch (luad.error.LuaError e) {
+            writeln("WARNING: Lua error from " ~ file ~ ": " ~ e.toString);
+            continue;
+        }
+        
+        try {
+            plugin = lua.get!LuaFunction("plugin");
+        } catch(luad.error.LuaError e) {
+            writeln("WARNING: Plugin " ~ file ~ " disabled, no `plugin` function");
+            continue;
+        }        
+        try {
+            name = lua.get!string("PluginName");
+        } catch(luad.error.LuaError e) {
+            writeln("WARNING: Plugin " ~ file ~ " disabled, no `PluginName` defined");
+            continue;
+        }
+        
+        luaPlugins[name] = lua;
+        writeln("Loaded: " ~ name);
+    }
+}
+
+
+///Call a Lua plugin. 
+void callPlugin(string name, Bot bot, IRCLine line) {
+    auto lua = name in luaPlugins;
+    if(lua == null) {
+        bot.privmsg(line["chan"], "Don't know command: " ~ name);
+        return;
+    }
+    
+    bool adminOnly = false;
+    try {
+        adminOnly = lua.get!bool("AdminOnly");
+    } catch(luad.error.LuaError e) {
+        // Meh
+    }
+    
+    if(adminOnly && !shouldBeAdmin(line)) {
+        return;
+    }
+    
+    void privmsg(string chan, string msg) {
+        bot.privmsg(chan, msg);
+    }
+    
+    void action(string chan, string msg) {
+        bot.action(chan, msg);
+    }
+
+    lua.set("command", line["command"]);
+    lua.set("nick", line["nick"]);
+    lua.set("host", line["host"]);
+    lua.set("type", line["type"]);
+    lua.set("chan", line["chan"]);
+    lua.set("text", line["text"]);
+    lua.set("args", line["args"]);
+    lua.set("privmsg", &privmsg);
+    
+    auto plugin = lua.get!LuaFunction("plugin");
+    plugin();
+
+}
+
+ 
