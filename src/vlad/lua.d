@@ -21,6 +21,7 @@ module vlad.lua;
 
 import std.stdio;
 import std.file;
+import std.string;
 
 import vlad.bot;
 import vlad.irc;
@@ -101,10 +102,15 @@ void callPlugin(string name, Bot bot, IRCLine line) {
     lua.set("text", line["text"]);
     lua.set("args", line["args"]);
     lua.set("privmsg", &privmsg);
+    lua.set("action", &action);
     
     auto plugin = lua.get!LuaFunction("plugin");
-    plugin();
+    try {
+        plugin();
+    }catch(luad.error.LuaError e) {
+        bot.privmsg(line["chan"], "Lua command encountered an error");
+        return;
+    }
+    
 
 }
-
- 

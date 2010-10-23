@@ -2,5 +2,5 @@ PluginName = "test"
 AdminOnly = true
 
 function plugin()
-    privmsg(chan, "hello, Lua");
+    privmsg(chan, "Hello, Lua");
 end
