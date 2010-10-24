@@ -29,8 +29,10 @@ import vlad.config;
 import vlad.commands;
 
 import luad.all;
+import luad.state;
 
 LuaState[string] luaPlugins;
+LuaState[string] implicitCommands;
 alias string[string] IRCLine;
 
 ///Load all the plugins from specified directory
@@ -59,6 +61,21 @@ void loadPlugins(string dir="plugins") {
         } catch(luad.error.LuaError e) {
             writeln("WARNING: Plugin " ~ file ~ " disabled, no `PluginName` defined");
             continue;
+        }
+        try {
+            bool implicit = lua.get!bool("ImplicitCommand");
+            if(implicit) {
+                try {
+                    auto impCmd = lua.get!LuaFunction("implicit");
+                    implicitCommands[name] = lua;
+                } catch (luad.error.LuaError e) {
+                    writeln("WARNING: Plugin " ~ file ~ "is declared as implicit, but"
+                        " has no `implicit` function");
+                    continue;
+                }
+            }
+        } catch(luad.error.LuaError e) {
+            //
         }
         
         luaPlugins[name] = lua;
@@ -114,6 +131,37 @@ void callPlugin(string name, Bot bot, IRCLine line) {
         bot.privmsg(line["chan"], "Lua command encountered an error");
         return;
     }
-    
+}
 
+void handleLuaImplicit(IRCLine line, Bot bot) {
+    foreach(impCmd; implicitCommands) {
+        
+        // ew, code repetition
+        void privmsg(string chan, string msg) {
+            bot.privmsg(chan, msg);
+        }
+
+        void action(string chan, string msg) {
+            bot.action(chan, msg);
+        }
+    
+        // since we are setting *globals* here, the trailing _ is used so
+        // that the variable is unique
+        impCmd.set("nick_", line["nick"]);
+        impCmd.set("host_", line["host"]);
+        impCmd.set("type_", line["type"]);
+        impCmd.set("chan_", line["chan"]);
+        impCmd.set("text_", line["text"]);
+        impCmd.set("privmsg", &privmsg);
+        impCmd.set("action", &action);
+        
+        auto cmd = impCmd.get!LuaFunction("implicit");
+        try {
+            cmd();
+        }catch(luad.error.LuaError e) {
+            writeln(e.toString());
+            bot.privmsg(line["chan"], "Lua command encountered an error");
+            return;
+        }
+    }
 }

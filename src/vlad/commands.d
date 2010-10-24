@@ -74,15 +74,16 @@ void handle_line(string input, Bot bot) {
         line["command"] = stripl(line["text"].indexOf(' ') == -1 ? 
             line["text"][1..$] : line["text"].split[0][1..$]);
         line["args"] = line["text"].split[1..$].join(" ");
+        handle_command(line, bot);
+        return;
     } else if (line["text"][0] == '\1'){
         line["text"] = line["text"][1..$-1];
         handle_ctcp(line, bot);
         return;
     } else {
+        handle_implicit(line, bot);
         return;
     }
-    
-    handle_command(line, bot);
 }
 
 void handle_ctcp(IRCLine line, Bot bot) {
@@ -112,6 +113,12 @@ void handle_ctcp(IRCLine line, Bot bot) {
     }
     
     return;
+}
+
+
+
+void handle_implicit(IRCLine line, Bot bot) {
+    handleLuaImplicit(line, bot);
 }
 
 void handle_command(IRCLine line, Bot bot) {
