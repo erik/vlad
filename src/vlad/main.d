@@ -47,6 +47,7 @@ void main(string[] args) {
 
     core.thread.Thread.sleep(50_000_000);
     bot_loop(bot);
+    
 }
  
  void bot_loop(Bot bot) {

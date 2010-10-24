@@ -86,19 +86,32 @@ void handle_line(string input, Bot bot) {
 }
 
 void handle_ctcp(IRCLine line, Bot bot) {
-    auto r = regex(r"([A-Z]+)\s+(.*)");
+    auto r = regex(r"([A-Z]+)(\s+)?(.*)?");
     auto match = match(line["text"], r);
+        
+    if(!match.empty) {
+        
+        string cmd = match.captures[1];
     
-    auto cmd = match.captures[1];
-    auto rest = match.captures[2];
-    writeln(cmd);
-    writeln(rest);
-    
-    switch(cmd) {
-        case "PING":
-            bot.privmsg(line["nick"], "\1PONG " ~ rest ~ "\1");
-            break;
+        string rest = "";
+        if(match.captures.length >= 4) {
+            rest = match.captures[3];
+        }
+        
+        switch(cmd) {
+            case "PING":
+                bot.privmsg(line["nick"], "\1PONG " ~ rest ~ "\1");
+                break;
+            case "VERSION":
+                bot.privmsg(line["nick"], "\1VERSION Vlad IRC:v0.0.1,"
+                    " compiled " __DATE__  ", "__TIME__ ":" __VENDOR__ "\1");
+                break;
+            default:
+                return;
+        }
     }
+    
+    return;
 }
 
 void handle_command(IRCLine line, Bot bot) {

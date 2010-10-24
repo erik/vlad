@@ -72,7 +72,7 @@ class IRC {
     }
     
     void quit() {
-        send("QUIT bye!");
+        send("QUIT :bye!");
         sock.close();
     }
     

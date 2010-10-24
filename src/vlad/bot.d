@@ -43,7 +43,8 @@ class Bot {
         void ping_loop() {
             if(isAlive) {
                 core.thread.Thread.sleep(1200_000_000);
-                foreach(string chan; chans) {
+                auto cs = this.channels;
+                foreach(string chan; cs) {
                     irc.send("PING " ~ chan);
                 }
                 ping_loop();
@@ -60,7 +61,7 @@ class Bot {
         }
     }
     
-    void part(string chan, string reason="\"Leaving\"") {
+    void part(string chan, string reason="Leaving") {
         chan = chomp(chan);
         
         if(inChan(chan)) {
