@@ -74,11 +74,31 @@ void handle_line(string input, Bot bot) {
         line["command"] = stripl(line["text"].indexOf(' ') == -1 ? 
             line["text"][1..$] : line["text"].split[0][1..$]);
         line["args"] = line["text"].split[1..$].join(" ");
+    } else if (line["text"][0] == '\1'){
+        line["text"] = line["text"][1..$-1];
+        handle_ctcp(line, bot);
+        return;
     } else {
         return;
     }
     
     handle_command(line, bot);
+}
+
+void handle_ctcp(IRCLine line, Bot bot) {
+    auto r = regex(r"([A-Z]+)\s+(.*)");
+    auto match = match(line["text"], r);
+    
+    auto cmd = match.captures[1];
+    auto rest = match.captures[2];
+    writeln(cmd);
+    writeln(rest);
+    
+    switch(cmd) {
+        case "PING":
+            bot.privmsg(line["nick"], "\1PONG " ~ rest ~ "\1");
+            break;
+    }
 }
 
 void handle_command(IRCLine line, Bot bot) {

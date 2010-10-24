@@ -12,7 +12,7 @@ LIBS=$(LIBLUA) $(LIBLUAD) $(LIBJSON)
 SRC=$(wildcard src/vlad/*.d)
 OBJ=$(SRC:.d=.o)
 
-#required for Lua (on Linux, at least; not portable)
+#required for Lua (on Linux at least; not portable)
 LNFLAGS=-L/usr/lib/libdl.so -L/usr/lib/liblua5.1.so.0
 
 EXE=vlad
@@ -68,4 +68,4 @@ rebuild: clean all
 loc:
 	@find src -type f -name "*.d" | xargs wc -l
 	
-.PHONY=clean distclean loc
+.PHONY=clean distclean loc rebuild
