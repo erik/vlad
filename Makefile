@@ -12,8 +12,8 @@ LIBS=$(LIBLUA) $(LIBLUAD) $(LIBJSON)
 SRC=$(wildcard src/vlad/*.d)
 OBJ=$(SRC:.d=.o)
 
-#required for Lua library (on Linux, at least; not portable)
-LNFLAGS=-L/usr/lib/libdl.so
+#required for Lua (on Linux, at least; not portable)
+LNFLAGS=-L/usr/lib/libdl.so -L/usr/lib/liblua5.1.so.0
 
 EXE=vlad
 

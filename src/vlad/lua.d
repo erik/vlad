@@ -94,13 +94,15 @@ void callPlugin(string name, Bot bot, IRCLine line) {
         bot.action(chan, msg);
     }
 
-    lua.set("command", line["command"]);
-    lua.set("nick", line["nick"]);
-    lua.set("host", line["host"]);
-    lua.set("type", line["type"]);
-    lua.set("chan", line["chan"]);
-    lua.set("text", line["text"]);
-    lua.set("args", line["args"]);
+    // since we are setting *globals* here, the trailing _ is used so
+    // that the variable is unique
+    lua.set("command_", line["command"]);
+    lua.set("nick_", line["nick"]);
+    lua.set("host_", line["host"]);
+    lua.set("type_", line["type"]);
+    lua.set("chan_", line["chan"]);
+    lua.set("text_", line["text"]);
+    lua.set("args_", line["args"]);
     lua.set("privmsg", &privmsg);
     lua.set("action", &action);
     
@@ -108,6 +110,7 @@ void callPlugin(string name, Bot bot, IRCLine line) {
     try {
         plugin();
     }catch(luad.error.LuaError e) {
+        writeln(e.toString());
         bot.privmsg(line["chan"], "Lua command encountered an error");
         return;
     }
