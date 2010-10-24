@@ -160,7 +160,6 @@ void handleLuaImplicit(IRCLine line, Bot bot) {
             cmd();
         }catch(luad.error.LuaError e) {
             writeln(e.toString());
-            bot.privmsg(line["chan"], "Lua command encountered an error");
             return;
         }
     }

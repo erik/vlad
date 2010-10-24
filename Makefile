@@ -67,5 +67,5 @@ rebuild: clean all
 
 loc:
 	@find src -type f -name "*.d" | xargs wc -l
-	
+		
 .PHONY=clean distclean loc rebuild

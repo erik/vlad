@@ -143,8 +143,6 @@ IRCcmd get_command(string name) {
             return &cmdPart;
         case "whereareyou":
             return &cmdChans;
-        case "sh":
-            return &cmdSh;
         case "reload":
             return &cmdReload;
         case "mute":
@@ -174,7 +172,8 @@ void cmdUnmute(IRCLine line) {
     ircBot.privmsg(line["chan"], "Unmuted.");
 }
     
-
+/*
+ * Keeping this version in case the Lua version ends up being insufficient
 void cmdSh(IRCLine line) {
     if(!shouldBeAdmin(line))
         return;
@@ -203,7 +202,7 @@ void cmdSh(IRCLine line) {
     }
 
     (new core.thread.Thread(&helper)).start();
-}
+}*/
 
 void cmdSay(IRCLine line) {
     ircBot.privmsg(line["chan"], line["args"]);
