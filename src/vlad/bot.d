@@ -35,24 +35,14 @@ class Bot {
     
     void connect() {
         irc = new IRC(server, port);
-        irc.recv_loop();
         irc.user(user);
         irc.nick(nick);
         alive = true;
-        
-        void ping_loop() {
-            if(isAlive) {
-                core.thread.Thread.sleep(1200_000_000);
-                auto cs = this.channels;
-                foreach(string chan; cs) {
-                    irc.send("PING " ~ chan);
-                }
-                ping_loop();
-            }
-        }
-        
-        (new core.thread.Thread(&ping_loop)).start();
-    }        
+    }
+    
+    void send(string msg) {
+        irc.send(msg);
+    }     
     
     void join(string chan) {
         if(!inChan(chan)) {
@@ -133,9 +123,6 @@ class Bot {
         return irc.recv();
     }
     
-    void clear_buffer(){
-        irc.clear_buf;
-    }
     
     string name(){
         return nick;

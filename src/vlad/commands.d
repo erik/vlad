@@ -54,20 +54,25 @@ bool shouldBeAdmin(IRCLine map) {
 void handle_line(string input, Bot bot) {
     auto r = regex(r"^:(.+)!(.+)@(\S+) (\S+) (\S+) :(.+)$");
     auto prepend = config_get("prepend");    
-    auto match = match(input, r);
+    auto m = match(input, r);
     
-    if(match.empty) {
-       return;
+    if(m.empty) {
+        r = regex(r"PING :(.*)");
+        m = match(input, r); 
+        if(!m.empty) {
+            bot.send("PONG :" ~ m.captures[1]);
+        }
+        return;
     }
     
     IRCLine line;
-    line["nick"] = match.captures[1];
-    line["user"] = match.captures[2];
-    line["host"] = match.captures[3];
-    line["type"] = match.captures[4];
-    line["chan"] = match.captures[5] == bot.name ? line["nick"] : 
-        match.captures[5];
-    line["text"] = match.captures[6].replace("\r\n", "\0");
+    line["nick"] = m.captures[1];
+    line["user"] = m.captures[2];
+    line["host"] = m.captures[3];
+    line["type"] = m.captures[4];
+    line["chan"] = m.captures[5] == bot.name ? line["nick"] : 
+        m.captures[5];
+    line["text"] = m.captures[6].replace("\r\n", "\0");
     
     //FIXME: Doesn't respond to highlights
     if(line["text"][0..1] == prepend) {

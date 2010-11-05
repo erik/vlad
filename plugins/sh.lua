@@ -1,6 +1,8 @@
 PluginName = "sh"
 AdminOnly = true
 
+-- might block for long running processes?
+
 function plugin()
     local p = io.popen(args_ .. " 2>&1")
     result = p:read("*a")

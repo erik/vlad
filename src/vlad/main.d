@@ -44,23 +44,16 @@ void main(string[] args) {
     foreach(chan; config["chans"]){
           bot.join(chan.toJSONString.get);
     }
-
-    core.thread.Thread.sleep(50_000_000);
+    
+    core.thread.Thread.sleep(50_000); // wait for it ...
     bot_loop(bot);
     
 }
  
  void bot_loop(Bot bot) {
-     bot.clear_buffer(); // clear out some connection leftovers     
-
      string line;
      
-     while(bot.isAlive()) {
-         line = bot.recv();
-         if(line.length) {
-            handle_line(line, bot);
-         } else {
-             core.thread.Thread.sleep(2_500_000);
-         }
+     while((line = bot.recv()) !is null) {
+         handle_line(line, bot);
      }
  }

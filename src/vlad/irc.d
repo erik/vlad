@@ -20,7 +20,7 @@
 module vlad.irc;
 
 import std.stdio;
-import std.socket;
+import std.socket, std.socketstream;
 import std.string;
 import core.thread;
 import std.array;
@@ -32,6 +32,7 @@ class IRC {
         this.port = port;
         
         sock = new TcpSocket(new InternetAddress(server, port));
+        sockStream = new SocketStream(sock);
     }
     
     void send(string message)
@@ -76,57 +77,19 @@ class IRC {
         sock.close();
     }
     
-    ///infinite loop, recieves data from socket, stores it in buffer
-    void recv_loop() {
-        Thread t = new Thread(&recv_loop_);
-        t.start();
-    }
-    
     string recv() {
-        if(recv_buf.empty) {
-            return "";
+        if(sock.isAlive()) {
+            string s = cast(string)this.sockStream.readLine();
+            writeln("<<" ~ s);
+            return s;
         }
-        
-        string line = recv_buf[0];
-        popBack(recv_buf);
-        
-        return line;
-    }
-    
-    void clear_buf() {
-        recv_buf.length = 0;
+        return null;
     }
     
     private:
-    void recv_loop_(){
-        char[256] ret = repeat("\0", 256);
-        while(sock.isAlive()) {
-            sock.receive(ret);
-            if(ret == "") {
-                break;
-            }
-            string str = cast(string) ret;
-            str = replace(str, "\r", "\0");
-            str = replace(str, "\n", "\0");
-            
-            string nstr = "";
-            foreach(int c; str) {
-                if(c != 0) {
-                    nstr ~= cast(char)c;
-                } else {
-                    break;
-                }
-            }
-            
-            writeln("<<" ~ nstr);
-            recv_buf ~= nstr;
-            ret = repeat("\0", 256);
-            Thread.sleep(500_000);
-        }
-        
-    }
-    string[] recv_buf;
+
     string server;
     ushort port;
-    TcpSocket sock;        
+    TcpSocket sock;  
+    SocketStream sockStream;      
 }
