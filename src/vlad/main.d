@@ -31,7 +31,7 @@ import vlad.lua;
 
 //TODO: clean up main
 
-void main(string[] args) {
+int main(string[] args) {
     read_config("vlad.config");
     
     loadPlugins();
@@ -41,13 +41,15 @@ void main(string[] args) {
     Bot bot = new Bot(server, config_get_numeric("port"), 
             config_get("botname"));
     bot.connect();
+    
+    core.thread.Thread.sleep(5_000_000); // wait for it ...
+
     foreach(chan; config["chans"]){
           bot.join(chan.toJSONString.get);
-    }
-    
-    core.thread.Thread.sleep(50_000); // wait for it ...
+    }    
+
     bot_loop(bot);
-    
+    return 0;    
 }
  
  void bot_loop(Bot bot) {
@@ -56,4 +58,5 @@ void main(string[] args) {
      while((line = bot.recv()) !is null) {
          handle_line(line, bot);
      }
+     return;
  }
